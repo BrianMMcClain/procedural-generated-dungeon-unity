@@ -6,14 +6,16 @@ public class PlayerController : MonoBehaviour
 {
     private float xAxis;
     private float zAxis;
+    private float rotation;
 
     public float speed = 5;
+    public float sensitivity = 5;
 
     public Camera playerCamera;
 
     void Start()
     {
-        
+        rotation = 0;
     }
 
     void Update()
@@ -25,9 +27,9 @@ public class PlayerController : MonoBehaviour
         transform.Translate(Vector3.right * xAxis * speed * Time.deltaTime);
 
         // Rotate
-        float mouseY = Input.GetAxis("Mouse Y");
-        float mouseX = Input.GetAxis("Mouse X");
-        playerCamera.transform.Rotate(new Vector3(-mouseY * 10, mouseY * 10, 0));
+        rotation += -Input.GetAxis("Mouse Y") * sensitivity;
+        playerCamera.transform.localRotation = Quaternion.Euler(rotation, 0, 0);
+        transform.rotation *= Quaternion.Euler(0, Input.GetAxis("Mouse X") * sensitivity, 0);
 
     }
 }

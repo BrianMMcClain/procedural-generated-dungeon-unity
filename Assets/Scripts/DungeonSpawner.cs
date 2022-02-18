@@ -8,6 +8,7 @@ class Room
     private Room nextRoom;
     private int x;
     private int y;
+    private GameObject roomGO;
 
     public Room(int x, int y, Room lastRoom)
     {
@@ -56,17 +57,28 @@ class Room
             return true;
         return false;
     }
+
+    public void SetRoomGO(GameObject roomGO)
+    {
+        this.roomGO = roomGO;
+    }
+
+    public GameObject GetRoomGO()
+    {
+        return this.roomGO;
+    }
 }
 
 public class DungeonSpawner : MonoBehaviour
 {
     public int roomCount = 5;
+    public GameObject player;
+    public GameObject roomPrefab;
+
     private int roomsGenerated;
     private Room[,] layout;
     private List<Room> rooms;
     private int roomOffset = 10;
-
-    public GameObject roomPrefab;
 
     void Start()
     {
@@ -80,7 +92,7 @@ public class DungeonSpawner : MonoBehaviour
         roomsGenerated = 1;
         GenerateLayout(startRoom);
         GenerateDungeon(startRoom);
-        Debug.Log(rooms.Count);
+        player.transform.position = new Vector3(startRoom.GetRoomGO().transform.position.x, 1, startRoom.GetRoomGO().transform.position.z);
     }
 
     void Update()
@@ -193,8 +205,48 @@ public class DungeonSpawner : MonoBehaviour
         while (currentRoom != null)
         {
             Vector3 loc = new Vector3(currentRoom.GetX() * roomOffset, 0, currentRoom.GetY() * roomOffset);
-            Instantiate(roomPrefab, loc, transform.rotation);
+            GameObject r = Instantiate(roomPrefab, loc, transform.rotation);
+            currentRoom.SetRoomGO(r);
+            RoomSpawner rSpawner = r.GetComponent<RoomSpawner>();
+            OpenWalls(currentRoom, rSpawner);
             currentRoom = currentRoom.GetNextRoom();
         }
+    }
+
+    private void OpenWalls(Room room, RoomSpawner rSpawner)
+    {
+        bool n, s, e, w;
+        n = s = e = w = true;
+
+        // Check north
+        if (room.GetY() > 0 && layout[room.GetX(), room.GetY() - 1] != null)
+        {
+            n = false;
+        }
+        // Check south
+        if (room.GetY() < (roomCount * 2) - 1 && layout[room.GetX(), room.GetY() + 1] != null)
+        {
+            s = false;
+        }
+        // Check east
+        try
+        {
+            if (room.GetX() < (roomCount * 2) - 1 && layout[room.GetX() + 1, room.GetY()] != null)
+            {
+                e = false;
+            }
+        } catch (System.Exception ex)
+        {
+            Debug.Log(ex.Message);
+        }
+        // Check west
+        if (room.GetX() > 0 && layout[room.GetX() - 1, room.GetY()] != null)
+        {
+            w = false;
+        }
+
+        Debug.Log(room.GetX() + ", " + room.GetY() + ": " + n + ", " + s + ", " + e + ", " + w);
+
+        rSpawner.SpawnWalls(n, s, e, w);
     }
 }
